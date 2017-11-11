@@ -1,4 +1,5 @@
 (ns app.core
+  (:gen-class)
   (:require
     [com.mitranim.forge :as forge]
     [com.stuartsierra.component :as component]
@@ -14,11 +15,11 @@
     :dat (app.dat/new-dat prev-sys (getenv "DB_URI"))
     :srv (app.srv/new-srv prev-sys)))
 
-(defn main []
+(defn -main []
   (println "Starting system on thread" (str (Thread/currentThread)) "...")
   (forge/reset-system! create-system))
 
-(defn main-dev []
+(defn -main-dev []
   (forge/start-development! {:system-symbol `create-system})
   (forge/reset-system! create-system)
   (println "Started server on" (str "http://localhost:" (getenv "LOCAL_PORT"))))
