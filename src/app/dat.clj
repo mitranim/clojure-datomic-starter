@@ -107,8 +107,8 @@
 
 
 (defn create-comment [^Dat dat body]
-  (if-let [body (not-empty (util/sanitize-html body))]
+  (if-let [body (not-empty (util/sanitize-permit-html body))]
     (do
       @(d/transact (:conn dat) [{:comment/body body}])
-      :ok)
+      nil)
     {:error "Missing comment body"}))

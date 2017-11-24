@@ -7,7 +7,7 @@
     [hiccup "1.0.5"]
     [compojure "1.6.0"]
     [ring/ring-defaults "0.3.1"]
-    [alxlit/autoclave "0.2.0"]
+    [com.googlecode.owasp-java-html-sanitizer/owasp-java-html-sanitizer "20171016.1"]
   ]
 
   :main app.core

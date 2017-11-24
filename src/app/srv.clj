@@ -8,7 +8,7 @@
     [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
     [clojure.walk :refer [keywordize-keys]]
     [ring.util.anti-forgery :refer [anti-forgery-field]]
-    [app.util :as util :refer [getenv sanitize-html]]
+    [app.util :as util :refer [getenv]]
     [app.dat :as dat])
   (:import
     [org.httpkit.server HttpServer]))
@@ -20,7 +20,7 @@
 (def styles "
 * {
   font-family: Menlo, Consolas, 'Helvetica Neue', Roboto, 'Segoe UI', Verdana, sans-serif;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 body {
@@ -68,11 +68,11 @@ body {
        (if-not (seq comments)
          [:p "No comments have been created yet"]
          (for [{:keys [inst comment/body]} (dat/q-comments db)]
-           [:p [:span {:style "color: gray"} inst] " " body]))])))
+           [:p [:span {:style "color: gray"} inst] [:span " "] [:span body]]))])))
 
 
 (defn submit-comment [req]
-  (let [body   (sanitize-html (-> req :params :comment/body))
+  (let [body   (util/sanitize-permit-html (-> req :params :comment/body))
         result (dat/create-comment (:dat sys) body)]
     {:status 303
      :headers {"Location" "/"}

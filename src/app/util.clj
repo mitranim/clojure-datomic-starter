@@ -1,9 +1,10 @@
 (ns app.util
   (:require
     [com.mitranim.forge :as forge]
-    [autoclave.html :as ahtml]
-    [clojure.walk]
-    ))
+    [clojure.string :as string]
+    [clojure.walk])
+  (:import
+   [org.owasp.html HtmlPolicyBuilder PolicyFactory]))
 
 (set! *warn-on-reflection* true)
 
@@ -20,25 +21,44 @@
 
 
 
-; Fix buggy implementation
-(ns autoclave.html)
-(defn- policy-factory [p] (if (instance? PolicyFactory p) p (policy p)))
-(ns app.util)
+; These replacements seem to be hardcoded in OWASP.
+; It seems to be geared towards sanitizing output, not input.
+(defn unescape-common-text-symbols [value]
+  (when (string? value)
+    (-> value
+        (string/replace "&amp;" "&")
+        (string/replace "&#34;" "\"")
+        (string/replace "&#39;" "'")
+        (string/replace "&#43;" "+")
+        (string/replace "&#61;" "=")
+        (string/replace "&#64;" "@")
+        (string/replace "&#96;" "`"))))
 
-(def permissive-html-policy
-  (ahtml/merge-policies
-    :BLOCKS
-    :FORMATTING
-    :IMAGES
-    :LINKS
-    :STYLES
-    (ahtml/policy :allow-elements ["hr"])))
+(def ^PolicyFactory policy-strip-html
+  (-> (new HtmlPolicyBuilder)
+      (.toFactory)))
 
-(defn sanitize-html [input]
-  (when (string? input)
-    (->> input
-         (ahtml/sanitize permissive-html-policy)
-         clojure.string/trim)))
+(defn sanitize-strip-html [value]
+  (when (string? value)
+    (-> (.sanitize policy-strip-html value)
+        (string/trim)
+        (unescape-common-text-symbols))))
+
+(def ^PolicyFactory policy-permit-html
+  (-> (new HtmlPolicyBuilder)
+      (.allowElements (into-array ["hr"]))
+      (.allowCommonInlineFormattingElements)
+      (.allowCommonBlockElements)
+      (.allowStandardUrlProtocols)
+      (.allowStyling)
+      (.toFactory)))
+
+(defn sanitize-permit-html [value]
+  (when (string? value)
+    (-> (.sanitize policy-permit-html value)
+        (string/trim)
+        (unescape-common-text-symbols))))
+
 
 
 (defn wrap-keywordize-params [handler]
