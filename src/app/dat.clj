@@ -74,33 +74,19 @@
 
 
 
-; https://github.com/Datomic/day-of-datomic/blob/master/tutorial/time-rules.clj
-(def rules '[
-  [(entity-inst [?e] ?inst)
-    [?e _ _ ?tx]
-    [?tx :db/txInstant ?inst]]
-  ])
-
-
-
-(def min-inst-q '
-  [:find (min ?inst) .
-   :in $h % ?e
-   :where ($h entity-inst ?e ?inst)])
-
-(defn q-min-inst [db id]
-  (when id (d/q min-inst-q (d/history db) rules id)))
-
-
-
 (def comments-q '
-  [:find [(pull ?e [:db/id :comment/body]) ...]
-   :where [?e :comment/body]])
+  [:find (pull ?e [:db/id :comment/body]) (min ?inst)
+   :in $ $h
+   :where
+   [?e :comment/body]
+   [$h ?e _ _ ?tx]
+   [$h ?tx :db/txInstant ?inst]
+   ])
 
 (defn q-comments [db]
   (->>
-    (for [comment (d/q comments-q db)]
-      (assoc comment :inst (q-min-inst db (:db/id comment))))
+    (for [[comment inst] (d/q comments-q db (d/history db))]
+      (assoc comment :inst inst))
     (sort-by :inst)
     reverse))
 
